@@ -32,26 +32,26 @@ export function useAppointmentSubscription() {
             response?: string
             error?: string
         }>((resolve) => {
-            const emitter = subscriptionService.createSubscription(clinicId, patientId, date);
+            const emitter = subscriptionService?.createSubscription(clinicId, patientId, date);
 
             const onData = (response: string) => {
                 resolve({ success: true, response });
                 setError(null);
                 setLoading(false);
-                emitter.removeListener('error', onError);
-                emitter.removeListener('data', onData);
+                emitter?.removeListener('error', onError);
+                emitter?.removeListener('data', onData);
             }
 
             const onError = (err: Error) => {
                 resolve({ success: false, error: err.message });
                 setError(err);
                 setLoading(false);
-                emitter.removeListener('error', onError);
-                emitter.removeListener('data', onData);
+                emitter?.removeListener('error', onError);
+                emitter?.removeListener('data', onData);
             }
 
-            emitter.once('data', onData);
-            emitter.once('error', onError);
+            emitter?.once('data', onData);
+            emitter?.once('error', onError);
         });
     }
 

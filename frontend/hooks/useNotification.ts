@@ -6,7 +6,7 @@ import mockNotificationService from '@/services/mocks/mockNotificationService'
 import { toast } from 'sonner'
 import { parseDateTime } from '@/lib/dateUtils'
 
-export function useNotification(patientId: string) {
+export function useNotification(patientId?: string) {
     const { service: notificationService, error: serviceError } =
         useMQTTService(NotificationService, mockNotificationService)
 
@@ -14,7 +14,7 @@ export function useNotification(patientId: string) {
     const [error, setError] = useState<Error | null>(serviceError)
 
     useEffect(() => {
-        if (!notificationService) return
+        if (!notificationService || !patientId) return
 
         if (notificationService instanceof NotificationService) {
             notificationService.setPatientId(patientId)
@@ -35,7 +35,7 @@ export function useNotification(patientId: string) {
                     descriptionClassName: '!text-white',
                     action: {
                         label: parseDateTime(timestamp).timeStr,
-                        onClick: undefined,
+                        onClick: () => {}
                     }
                 })
             }

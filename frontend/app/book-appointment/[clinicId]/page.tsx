@@ -19,8 +19,8 @@ export default function BookAppointmentPage() {
     >('reason')
     const [reasonId, setReasonId] = useState<string>('')
     const [duration, setDuration] = useState<number | null>(null)
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-    const [selectedTime, setSelectedTime] = useState<Date | null>(null)
+    const [selectedDate, setSelectedDate] = useState<Date>()
+    const [selectedTime, setSelectedTime] = useState<Date>()
     const [appointmentConfirmed, setAppointmentConfirmed] = useState(false)
     const [selectedAppointmentId, setSelectedAppointmentId] =
         useState<string>('')
@@ -57,9 +57,7 @@ export default function BookAppointmentPage() {
             })
             router.replace('/account')
         }
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [appointmentConfirmed])
+    }, [appointmentConfirmed, router])
 
     const handleReasonSelect = (selectedReasonId: string) => {
         setReasonId(selectedReasonId)
@@ -77,7 +75,11 @@ export default function BookAppointmentPage() {
         if (selectedAppointmentId) {
             unlockAppointment(selectedAppointmentId)
         }
-        lockAppointment(appointmentId, localStorage.getItem('userId') || '', clinicId)
+        lockAppointment(
+            appointmentId,
+            localStorage.getItem('userId') || '',
+            clinicId
+        )
         setSelectedDate(date)
         setSelectedTime(time)
         setSelectedAppointmentId(appointmentId)
@@ -105,6 +107,12 @@ export default function BookAppointmentPage() {
 
         setResult(bookingResult)
 
+        if (bookingResult.error) {
+            toast.error("Your Appointment Booking Didn't go through :(", {
+                description: bookingResult.error
+            })
+        }
+
         if (bookingResult.success && bookingResult.data) {
             clearLock()
             setAppointmentConfirmed(true)
@@ -130,8 +138,8 @@ export default function BookAppointmentPage() {
                     selectedReason={reasonId}
                     onEdit={() => {
                         setReasonId('')
-                        setSelectedDate(null)
-                        setSelectedTime(null)
+                        setSelectedDate(undefined)
+                        setSelectedTime(undefined)
                         setDuration(null)
                         setCurrentStep('reason')
                     }}
@@ -158,12 +166,6 @@ export default function BookAppointmentPage() {
                     appointmentDuration={duration || 30}
                     disableButton={!!result.data}
                 />
-                {result.success === false && (
-                    <div className="mt-4 p-4 bg-red-100 text-red-800 rounded">
-                        <h3 className="text-lg font-semibold">Error</h3>
-                        <p>{result.error}</p>
-                    </div>
-                )}
             </div>
         </div>
     )

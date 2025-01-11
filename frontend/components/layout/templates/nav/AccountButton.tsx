@@ -4,10 +4,17 @@ import Link from 'next/link'
 import { User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useNotification } from '@/hooks/useNotification'
+import { useEffect, useState } from 'react'
 
 export default function AccountButton() {
+    const [patientId, setPatientId] = useState<string>()
     const router = useRouter()
-    useNotification(localStorage.getItem('userId'))
+    useNotification(patientId ?? undefined)
+
+    useEffect(() => {
+        const patientId = localStorage.getItem('patientId')
+        if (patientId) setPatientId(patientId)
+    }, [])
 
     const handleAccountClick = (e: React.MouseEvent) => {
         e.preventDefault()

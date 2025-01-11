@@ -3,7 +3,11 @@ export interface ParsedDateTime {
     timeStr: string
 }
 
-export const parseDateTime = (dateTimeStr: string | Date): ParsedDateTime => {
+export const parseDateTime = (dateTimeStr?: string | Date): ParsedDateTime => {
+    if (!dateTimeStr) {
+        return { dateKey: '', timeStr: '' }
+    }
+
     const d = new Date(dateTimeStr)
 
     const dateKey = d.toLocaleDateString('en-SE', {

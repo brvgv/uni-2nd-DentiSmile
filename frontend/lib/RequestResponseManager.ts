@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { MqttClient } from 'mqtt'
 import { generateUniqueId } from './utils'
 import { EventEmitter } from 'events'

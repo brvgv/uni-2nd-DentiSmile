@@ -5,8 +5,8 @@ import './Calendar.css'
 import { parseDateTime } from '@/lib/dateUtils'
 
 interface DateSelectionProps {
-    setSelectedDate: (date: Date | null) => void
-    selectedDate: Date | null
+    setSelectedDate: (date: Date) => void
+    selectedDate?: Date
     disabled?: boolean
     clinicId: string
     monthlyAvailability: Record<string, number>

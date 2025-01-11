@@ -1,33 +1,40 @@
 import { Button } from '../ui/button'
 import { useAppointmentSubscription } from '@/hooks/useAppointmentSubscription'
-import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 
 const AppointmentSubscription = ({
     clinicId,
-    patientId,
     date
 }: {
     clinicId: string
-    patientId: string
     date: Date
 }) => {
-    const { isLoading, error, subscribeToDate } = useAppointmentSubscription()
-    const [responseMessage, setResponseMessage] = useState<string | null>(null)
+    const { isLoading, subscribeToDate } = useAppointmentSubscription()
 
     const handleSubscribe = async () => {
-        setResponseMessage(null)
-        const { success } = await subscribeToDate(clinicId, patientId, date)
+        const patientId = localStorage.getItem('userId')
+
+        if (!patientId) {
+            toast.info('Please log in to subscribe.')
+            return
+        }
+        const { success, error } = await subscribeToDate(
+            clinicId,
+            patientId,
+            date
+        )
 
         if (success) {
-            setResponseMessage('Subscription successful!')
-        } else {
-            setResponseMessage('An error occured while subscribing!')
+            toast.success('Successful Subscription!', {
+                description:
+                    "You'll get notified once there's any available appointment on this day"
+            })
+        } else if (error) {
+            toast.warning('Failed Subscription!', {
+                description: error
+            })
         }
     }
-
-    useEffect(() => {
-        setResponseMessage(null)
-    }, [clinicId, patientId, date])
 
     return (
         <>
@@ -35,22 +42,11 @@ const AppointmentSubscription = ({
                 onClick={handleSubscribe}
                 disabled={isLoading}
                 variant="link"
-                className='px-1 font-bold'
+                className="px-1 font-bold"
             >
                 {isLoading ? 'Subscribing...' : 'Subscribe'}
             </Button>
             to future appointments on this day.
-            <div>
-                {responseMessage && (
-                    <div
-                        style={{
-                            color: error ? 'red' : 'green'
-                        }}
-                    >
-                        {responseMessage}
-                    </div>
-                )}
-            </div>
         </>
     )
 }

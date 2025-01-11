@@ -6,7 +6,7 @@ import { parseDateTime } from '@/lib/dateUtils'
 
 interface TimeSelectionProps {
     setSelectedTime: (date: Date, appointmentId: string) => void
-    selectedTime: Date | null
+    selectedTime?: Date
     disabled?: boolean
     clinicId: string
     appointmentDuration: number

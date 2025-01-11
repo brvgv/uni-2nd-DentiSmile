@@ -4,8 +4,8 @@ import { parseDateTime } from '@/lib/dateUtils'
 interface ConfirmationProps {
     isActive: boolean
     reason: string
-    selectedDate: Date | null
-    selectedTime: Date | null
+    selectedDate?: Date
+    selectedTime?: Date
     appointmentDuration: number
     onConfirm: () => void
     disableButton: boolean
