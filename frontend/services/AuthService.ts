@@ -20,7 +20,7 @@ export class AuthService implements IAuthService {
 
     constructor(client: any) {
         this.client = client
-        this.requestManager = new RequestResponseManager<any>()
+        this.requestManager = new RequestResponseManager()
     }
 
     public register(email: string, password: string): EventEmitter {

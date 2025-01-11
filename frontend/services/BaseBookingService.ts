@@ -5,11 +5,17 @@ import { MqttClient } from 'mqtt'
 
 export abstract class BaseBookingService implements IBookingService {
     protected client: MqttClient
-    protected requestManager: RequestResponseManager<MqttClient>
+    protected requestManager: RequestResponseManager<{
+        appointmentId?: string
+        patientId?: string
+        clinicId?: string
+        reasonId?: string
+        date?: string
+    }>
 
     constructor(client: MqttClient) {
         this.client = client
-        this.requestManager = new RequestResponseManager<MqttClient>()
+        this.requestManager = new RequestResponseManager()
 
         if (!client || typeof client.on !== 'function') {
             throw new Error('Invalid MQTT client provided')
@@ -21,13 +27,9 @@ export abstract class BaseBookingService implements IBookingService {
         patientId: string
     ): EventEmitter
 
-    public abstract cancelBooking(
-        bookingId: string
-    ): EventEmitter
+    public abstract cancelBooking(bookingId: string): EventEmitter
 
-    public abstract getBookings(
-        patientId: string
-    ): EventEmitter
+    public abstract getBookings(patientId: string): EventEmitter
 
     public abstract getBookingAppointments(
         clinicId: string,

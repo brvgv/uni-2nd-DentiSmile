@@ -12,6 +12,7 @@ interface RequestResponse<T> {
     timeout?: NodeJS.Timeout
     type: RequestType
     data?: T
+    topic: string
 }
 
 export class RequestResponseManager<T> {
@@ -22,7 +23,7 @@ export class RequestResponseManager<T> {
     public request(
         requestTopic: string,
         responseTopic: string,
-        payload: any,
+        payload: T,
         client: MqttClient,
         type: RequestType = RequestType.DIRECT,
         timeout = this.DEFAULT_TIMEOUT
@@ -32,6 +33,11 @@ export class RequestResponseManager<T> {
         const requestPayload =
             type === RequestType.DIRECT ? { ...payload, clientId } : payload
         
+        const topicToSubscribe =
+            type === RequestType.BROADCAST
+                ? responseTopic
+                : responseTopic + clientId
+
         const timeoutHandler =
             type === RequestType.DIRECT
                 ? setTimeout(() => {
@@ -43,13 +49,9 @@ export class RequestResponseManager<T> {
         this.requests.set(clientId, {
             emitter,
             timeout: timeoutHandler,
-            type
+            type,
+            topic: topicToSubscribe
         })
-
-        const topicToSubscribe =
-            type === RequestType.BROADCAST
-                ? responseTopic
-                : responseTopic + clientId
 
         if (
             type === RequestType.BROADCAST &&
@@ -60,31 +62,38 @@ export class RequestResponseManager<T> {
         }
 
         const messageHandler = (topic: string, message: Buffer) => {
-            if (topic !== topicToSubscribe) return
+            // Find all requests that match this topic
+            const matchingRequests = Array.from(this.requests.entries())
+                .filter(([, request]) => request.topic === topic)
+
+            if (matchingRequests.length === 0) return
 
             try {
                 const response = JSON.parse(message.toString())
-                if (type === RequestType.DIRECT) {
+                
+                matchingRequests.forEach(([clientId, request]) => {
                     if (response.status?.code === 200) {
-                        emitter.emit('data', response.data || response)
-                        this.cleanup(clientId, client)
+                        request.emitter.emit('data', response.data || response)
+                        if (request.type === RequestType.DIRECT) {
+                            this.cleanup(clientId, client)
+                        }
                     } else {
-                        emitter.emit(
+                        request.emitter.emit(
                             'error',
-                            new Error(
-                                response.status?.message || 'Request failed'
-                            )
+                            new Error(response.status?.message || 'Request failed')
                         )
+                        if (request.type === RequestType.DIRECT) {
+                            this.cleanup(clientId, client)
+                        }
+                    }
+                })
+            } catch {
+                matchingRequests.forEach(([clientId, request]) => {
+                    request.emitter.emit('error', new Error('Invalid response format'))
+                    if (request.type === RequestType.DIRECT) {
                         this.cleanup(clientId, client)
                     }
-                } else {
-                    emitter.emit('data', response.data || response)
-                }
-            } catch {
-                emitter.emit('error', new Error('Invalid response format'))
-                if (type === RequestType.DIRECT) {
-                    this.cleanup(clientId, client)
-                }
+                })
             }
         }
 

@@ -1,6 +1,4 @@
 import { IClinicService } from './interfaces/IClinicService'
-import { IAppointment } from './interfaces/IAppointment'
-import { IClinic } from './interfaces/IClinic'
 import { MQTT_TOPICS } from './base/MQTTService'
 import { BaseClinicService } from './BaseClinicService'
 import {
@@ -11,9 +9,7 @@ import { MqttClient } from 'mqtt'
 import { EventEmitter } from 'events'
 
 export class ClinicService extends BaseClinicService implements IClinicService {
-    protected requestManager: RequestResponseManager<
-        IClinic | IAppointment | { success: boolean }
-    >
+    protected requestManager: RequestResponseManager<unknown>
 
     constructor(client: MqttClient) {
         super(client)
@@ -62,9 +58,7 @@ export class ClinicService extends BaseClinicService implements IClinicService {
         )
     }
 
-    public unlockAppointmentSlot(
-        appointmentId: string
-    ): EventEmitter {
+    public unlockAppointmentSlot(appointmentId: string): EventEmitter {
         return this.requestManager.request(
             MQTT_TOPICS.APPOINTMENT.UNLOCK.REQUEST,
             MQTT_TOPICS.APPOINTMENT.UNLOCK.RESPONSE(''),

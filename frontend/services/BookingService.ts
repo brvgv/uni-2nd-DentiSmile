@@ -13,7 +13,13 @@ export class BookingService
     extends BaseBookingService
     implements IBookingService
 {
-    protected requestManager: RequestResponseManager<MqttClient>
+    protected requestManager: RequestResponseManager<{
+        appointmentId?: string;
+        patientId?: string;
+        clinicId?: string;
+        reasonId?: string;
+        date?: string;
+    }>
 
     constructor(client: MqttClient) {
         super(client)

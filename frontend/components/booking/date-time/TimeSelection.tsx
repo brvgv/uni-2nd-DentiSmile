@@ -48,7 +48,6 @@ export default function TimeSelectionComponent({
                                 )}
                                 onClick={() => {
                                     if (disabled) return
-                                    console.log('selectedTime', selectedTime);
 
                                     const [hours, minutes] = time
                                         .split(':')

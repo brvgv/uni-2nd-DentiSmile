@@ -9,7 +9,7 @@ export abstract class BaseClinicService implements IClinicService {
 
     constructor(client: any) {
         this.client = client
-        this.requestManager = new RequestResponseManager<any>()
+        this.requestManager = new RequestResponseManager()
 
         if (!client || typeof client.on !== 'function') {
             throw new Error('Invalid MQTT client provided')
