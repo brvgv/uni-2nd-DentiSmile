@@ -73,6 +73,7 @@ services:
         depends_on:
             - mongo-appointment
             - mqtt-broker
+            - redis_appointment
         networks:
             - network-cluster
 
@@ -175,6 +176,16 @@ services:
             - '27021:27017'
         volumes:
             - ./infrastructure/database/notification_data:/data/db
+        networks:
+            - network-cluster
+
+    redis_appointment:
+        image: redis:latest
+        container_name: redis_appointment
+        ports:
+            - '27022:6379'
+        volumes:
+            - ./infrastructure/caching/appointment_data:/data
         networks:
             - network-cluster
 

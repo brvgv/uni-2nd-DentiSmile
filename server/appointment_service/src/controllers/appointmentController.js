@@ -6,6 +6,7 @@ import {
     generateMultiDaySlots,
     isValidIsoDate
 } from '../utils/dateUtils.js'
+import { cacheAppointments, getAppointmentFromCache } from './cachingController.js';
 
 const LOCK_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
 const lockTimeouts = new Map();
@@ -277,14 +278,24 @@ export const removeAppointment = async (message) => {
 }
 
 export const getAppointmentsByClinic = async (message) => {
+    let clinicId;
     try {
-        const { clinicId } = JSON.parse(message)
+        const { clinicId: parsedClinicId } = JSON.parse(message)
+        clinicId = parsedClinicId;
 
         const appointments = await AppointmentSlot.find({ clinicId })
 
         if (appointments.length < 1) {
             return { status: { code: 404, message: 'Appointments not found' } }
         }
+
+        //cache appointments for the next 96 hours for this clinic
+        const now = new Date();
+        const cutoffTime = new Date(now.getTime() + 96 * 60 * 60 * 1000); // 96 hours from now
+        const upcomingAppointments = appointments.filter(appointment =>
+            new Date(appointment.startTime) >= now && new Date(appointment.startTime) <= cutoffTime
+        );
+        await cacheAppointments(clinicId, upcomingAppointments);
 
         return {
             status: {
@@ -293,9 +304,31 @@ export const getAppointmentsByClinic = async (message) => {
             },
             data: appointments
         }
-    } catch (error) {
-        console.log(error)
-        return { status: { code: 500, message: 'Error fetching appointments' } }
+    } catch (dbError) {
+        console.error(dbError);
+        try {
+            const cachedAppointments = await getAppointmentFromCache(clinicId);
+
+            if (cachedAppointments) {
+                return {
+                    status: {
+                        code: 200,
+                        message: 'Appointments retrieved successfully from cache'
+                    },
+                    data: JSON.parse(cachedAppointments) // Parse cached JSON string back to object
+                };
+            }
+
+            return {
+                status: {
+                    code: 500,
+                    message: 'Database failure and no cached data available'
+                }
+            };
+        } catch (cacheError) {
+            console.error(cacheError);
+            return { status: { code: 500, message: 'Error fetching appointments' } }
+        }
     }
 }
 
