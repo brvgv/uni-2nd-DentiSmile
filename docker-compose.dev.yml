@@ -24,7 +24,7 @@ services:
             - clinic-service
             - appointment-service
             - auth-service
-            - mqtt-broker
+            - mqtt-broker-lb
 
     # Clinic Service
     clinic-service:
@@ -47,7 +47,7 @@ services:
             - NODE_ENV=development
         depends_on:
             - mongo-clinic
-            - mqtt-broker
+            - mqtt-broker-lb
         networks:
             - network-cluster
 
@@ -58,8 +58,6 @@ services:
             dockerfile: server/appointment_service/Dockerfile.dev
         container_name: appointment-service
         restart: unless-stopped
-        ports:
-            - '5000:5000'
         volumes:
             # Mount source code but exclude node_modules
             - ./server/appointment_service:/app/server/appointment_service
@@ -72,7 +70,7 @@ services:
             - NODE_ENV=development
         depends_on:
             - mongo-appointment
-            - mqtt-broker
+            - mqtt-broker-lb
             - redis_appointment
         networks:
             - network-cluster
@@ -97,7 +95,7 @@ services:
             - NODE_ENV=development
         depends_on:
             - mongo-auth
-            - mqtt-broker
+            - mqtt-broker-lb
         networks:
             - network-cluster
 
@@ -125,14 +123,51 @@ services:
         networks:
             - network-cluster
 
+    #mqtt-broker instances (3)
     mqtt-broker:
         image: eclipse-mosquitto:2.0
         container_name: mqtt-broker
         volumes:
             - ./infrastructure/mqtt-broker/config:/mosquitto/config
         ports:
-            - '1883:1883'
-            - '9001:9001'
+            - '1885:1883'
+            - '9002:9001'
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
+        networks:
+            - network-cluster
+        restart: always
+
+    mqtt-broker2:
+        image: eclipse-mosquitto:2.0
+        container_name: mqtt-broker2
+        volumes:
+            - ./infrastructure/mqtt-broker/config:/mosquitto/config
+        ports:
+            - '2883:1883'
+            - '2901:9001'
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
+        networks:
+            - network-cluster
+        restart: always
+
+    mqtt-broker3:
+        image: eclipse-mosquitto:2.0
+        container_name: mqtt-broker3
+        volumes:
+            - ./infrastructure/mqtt-broker/config:/mosquitto/config
+        ports:
+            - '3883:1883'
+            - '3901:9001'
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
         networks:
             - network-cluster
         restart: always
@@ -168,7 +203,7 @@ services:
             - ./infrastructure/database/auth_data:/data/db
         networks:
             - network-cluster
-            
+
     mongo-notification:
         image: mongo:latest
         container_name: mongo-notification
@@ -188,6 +223,24 @@ services:
             - ./infrastructure/caching/appointment_data:/data
         networks:
             - network-cluster
+
+    # TCP load-balancer
+    mqtt-broker-lb:
+        image: haproxy:2.6
+        container_name: mqtt-broker-lb
+        volumes:
+            - ./infrastructure/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+        ports:
+            - '1884:1883'
+            - '9001:9001'
+            - '5001:5001'
+        networks:
+            - network-cluster
+        depends_on:
+            - mqtt-broker
+            - mqtt-broker2
+            - mqtt-broker3
+        restart: always
 
 volumes:
     frontend_node_modules:

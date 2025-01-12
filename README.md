@@ -8,7 +8,7 @@ The DentiSmile+ system leverages a distributed microservices architecture combin
 
 ## System Architecture
 
-![System Architecture Diagram](docs/architecture/diagrams/system-architecture-diagram.png)
+![System Architecture Diagram](docs\architecture\diagrams\sysarch.png)
 
 ## ER Diagram
 
@@ -29,17 +29,17 @@ The DentiSmile+ system leverages a distributed microservices architecture combin
 
 ## Requirements
 
-- Node.js (v20+)
-- MongoDB
-- An MQTT broker
+-   Node.js (v20+)
+-   MongoDB
+-   An MQTT broker
 
 `Add other tech stack here`
 
 ## Usage
 
-- As a user: view available clinics and slots for a clinic on a map of Gothenburg and book/cancel dentist appointments.
-- As a dentist: manage their own availability through the dentist interface.
-- Real-time notifications are enabled for booking status updates through MQTT.
+-   As a user: view available clinics and slots for a clinic on a map of Gothenburg and book/cancel dentist appointments.
+-   As a dentist: manage their own availability through the dentist interface.
+-   Real-time notifications are enabled for booking status updates through MQTT.
 
 ## Docker Setup
 
@@ -56,8 +56,8 @@ docker compose -f docker-compose.dev.yml up -d
 ### Available Docker Configurations
 
 1. **Development Setup**:
-   - Enhanced for development with hot-reloading
-   - Uses files: `docker-compose.dev.yml` and `.dev` Dockerfiles in service directories
+    - Enhanced for development with hot-reloading
+    - Uses files: `docker-compose.dev.yml` and `.dev` Dockerfiles in service directories
 
 ## Issues / Support
 
@@ -67,10 +67,10 @@ If you encounter any issues, please submit them through the [issue tracker](http
 
 ## Roadmap
 
-- **MS1**: Implement 20% of core functionality (Microservices,client, MQTT, documentation)
-- **MS2**: Implement remaining core features and improve client UI
-- **MS3**: Complete system design, integrate additional requirements shared in december
-- **Final presentation**: System testing, cleanup, and preparation for demonstration
+-   **MS1**: Implement 20% of core functionality (Microservices,client, MQTT, documentation)
+-   **MS2**: Implement remaining core features and improve client UI
+-   **MS3**: Complete system design, integrate additional requirements shared in december
+-   **Final presentation**: System testing, cleanup, and preparation for demonstration
 
 ## Contributing
 
@@ -78,8 +78,8 @@ We welcome contributions! Please refer to our [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Authors and Acknowledgments
 
-- Team Members: Maksym Matsuhyria, Ahmet Yavuz Kalkan, Yaroslav Ursul, Andre Ibrahim, Mahmoud Khalafallah
-- Special thanks to the course instructors and TA’s for guidance on distributed systems and project management.
+-   Team Members: Maksym Matsuhyria, Ahmet Yavuz Kalkan, Yaroslav Ursul, Andre Ibrahim, Mahmoud Khalafallah
+-   Special thanks to the course instructors and TA’s for guidance on distributed systems and project management.
 
 ## License
 

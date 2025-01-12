@@ -53,11 +53,45 @@ export const subscribe = async (topic, callback, options = {}) => {
 
         client.on('message', (receivedTopic, message) => {
             if (receivedTopic === topic) {
-                callback(JSON.parse(message.toString()));
+                callback(JSON.parse(message.toString()))
             }
         })
     } catch (error) {
         console.error(`Error subscribing to topic "${topic}":`, error)
+        throw error
+    }
+}
+
+export const subscribeShared = async (
+    groupName,
+    topic,
+    callback,
+    options = {}
+) => {
+    if (!client) throw new Error('MQTT client not connected')
+    try {
+        const sharedTopic = `$share/${groupName}/${topic}`
+        await client.subscribeAsync(sharedTopic, options)
+        console.log(`Subscribed to shared topic "${sharedTopic}"`)
+
+        client.on('message', (receivedTopic, message) => {
+            if (receivedTopic === sharedTopic) {
+                try {
+                    const parsedMessage = JSON.parse(message.toString())
+                    callback(parsedMessage)
+                } catch (error) {
+                    console.error(
+                        `Failed to process message on topic "${receivedTopic}":`,
+                        error
+                    )
+                }
+            }
+        })
+    } catch (error) {
+        console.error(
+            `Failed to process message on topic "${receivedTopic}":`,
+            error
+        )
         throw error
     }
 }
@@ -100,12 +134,15 @@ export const handleEndpoint = async (
 
         client.on('message', async (receivedTopic, message) => {
             if (receivedTopic === requestTopic) {
-                let parsedMessage;
+                let parsedMessage
                 try {
-                    parsedMessage = JSON.parse(message.toString());
+                    parsedMessage = JSON.parse(message.toString())
                 } catch (parseError) {
-                    console.error(`Invalid JSON payload received: ${message.toString()}`, parseError);
-                    return;
+                    console.error(
+                        `Invalid JSON payload received: ${message.toString()}`,
+                        parseError
+                    )
+                    return
                 }
 
                 const { clientId } = parsedMessage;
