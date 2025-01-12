@@ -119,3 +119,40 @@ export const handleEndpoint = async (
         throw error
     }
 }
+
+export const validateEntity = async ({
+    requestTopic,
+    responseTopicGenerator,
+    payload,
+    validateResponse,
+    timeoutDuration = 5000
+}) => {
+    const clientId = Math.random().toString(36).slice(2, 9);
+    const updatedPayload = { ...payload, clientId };
+    const responseTopic = responseTopicGenerator(clientId);
+
+    return new Promise(async (resolve, reject) => {
+        let timeout;
+
+        try {
+            await subscribe(responseTopic, async (response) => {
+                clearTimeout(timeout);
+
+                await unsubscribe(responseTopic);
+
+                const isValid = await validateResponse(response, updatedPayload);
+                resolve(isValid);
+            });
+
+            await publish(requestTopic, updatedPayload);
+
+            timeout = setTimeout(async () => {
+                await unsubscribe(responseTopic);
+                resolve(false);
+            }, timeoutDuration);
+        } catch (error) {
+            console.error('Error validating the entity:', error);
+            reject(false);
+        }
+    });
+};

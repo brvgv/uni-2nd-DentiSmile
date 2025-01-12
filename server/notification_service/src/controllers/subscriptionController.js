@@ -1,4 +1,6 @@
 import DateSubscription from "../models/dateSubscription.js"
+import { MQTT_TOPICS } from "shared-mqtt/mqttTopics.js";
+import { validateEntity } from "shared-mqtt/mqttClient.js";
 
 export const subscribeToDate = async (message) => {
     try {
@@ -6,8 +8,14 @@ export const subscribeToDate = async (message) => {
 
         const timestamp = new Date(date).toISOString().split('T')[0];
 
-        // TO-DO: add checks for id validation
+        const clinicExists = await validateClinic(clinicId);
+        if (!clinicExists) {
+            return {
+                status: { code: 400, message: `Clinic not found` },
+            };
+        }
 
+        // TO-DO: authorization
         const existingSubscription = await DateSubscription.findOne({ clinicId, date: timestamp });
 
         if (existingSubscription) {
@@ -44,7 +52,7 @@ export const getSubscriptionsByPatient = async (message) => {
     try {
         const { patientId } = JSON.parse(message)
 
-        // TO-DO: add checks for id validation
+        // TO-DO: authorization
 
         const subscriptions = await DateSubscription.find({ patientId: { $in: [patientId] } });
         if (subscriptions.length < 1) {
@@ -67,7 +75,14 @@ export const getSubscriptionByClinicAndDate = async (message) => {
     try {
         const { clinicId, date } = JSON.parse(message)
 
-        // TO-DO: add checks for id validation
+        const clinicExists = await validateClinic(clinicId);
+        if (!clinicExists) {
+            return {
+                status: { code: 400, message: `Clinic not found` },
+            };
+        }
+
+        // TO-DO: authorization
 
         const subscriptions = await DateSubscription.find({ clinicId, date });
         if (subscriptions.length < 1) {
@@ -89,6 +104,8 @@ export const getSubscriptionByClinicAndDate = async (message) => {
 export const removeSubscription = async (message) => {
     try {
         const { subscriptionId, patientId } = JSON.parse(message);
+
+        // TODO: authorization
 
         const subscription = await DateSubscription.findById(subscriptionId);
 
@@ -127,4 +144,13 @@ export const removeSubscription = async (message) => {
         console.error('Error removing subscription:', error);
         return { status: { code: 500, message: 'Internal server error' } };
     }
+};
+
+export const validateClinic = async (clinicId) => {
+    return validateEntity({
+        requestTopic: MQTT_TOPICS.CLINIC.RETRIEVE.ONE.REQUEST,
+        responseTopicGenerator: (clientId) => MQTT_TOPICS.CLINIC.RETRIEVE.ONE.RESPONSE(clientId),
+        payload: { _id: clinicId },
+        validateResponse: (response, { _id }) => response.data && response.data._id === _id
+    });
 };

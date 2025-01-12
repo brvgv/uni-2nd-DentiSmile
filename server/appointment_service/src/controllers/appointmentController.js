@@ -14,6 +14,8 @@ export const bookAppointment = async (message) => {
     try {
         const { patientId, appointmentId } = JSON.parse(message)
 
+        // TO-DO: add authorization
+
         // Clear timeout if it exists
         if (lockTimeouts.has(appointmentId)) {
             clearTimeout(lockTimeouts.get(appointmentId));
@@ -166,7 +168,7 @@ export const createAppointments = async (message) => {
             }
         }
 
-        // TO-DO: check dentistId validity?
+        // TO-DO: authorization
         const existingSlots = await AppointmentSlot.find({
             dentistId,
             $or: [{ startTime: { $lt: end }, endTime: { $gt: start } }]
