@@ -1,57 +1,63 @@
 import chalk from 'chalk';
 import inquirer from 'inquirer';
-import { mainMenu } from './mainMenu.js';
 import { mqttRequestResponse } from '../util/mqttRequest.js';
 import mqttUtils from 'shared-mqtt'
 import Table from 'cli-table3';
+import { getActiveUserId } from '../util/userState.js';
+import { DateTime } from 'luxon';
 
 const { MQTT_TOPICS } = mqttUtils;
-const hardCodedDentistId = '673d250e840b29fc54c9da0c'; // Hard-coded dentist ID for now
 let appointments = [];
 let appointmentsByDay = {};
-
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-const sevenDaysLater = new Date(today);
-sevenDaysLater.setDate(today.getDate() + 7);
-
+let answers;
 
 // Function to view appointments
 export const viewAppointments = async () => {
 
-    await displayAppointments();
     let action;
+
     do {
-        ({ action } = await inquirer.prompt([
+        answers = await inquirer.prompt([
+            {
+                type: 'input',
+                name: 'startingDate',
+                message: 'Enter the starting date (YYYY-MM-DD): ',
+                validate: validateDate
+            },
+            {
+                type: 'input',
+                name: 'endingDate',
+                message: 'Enter the ending date (YYYY-MM-DD): ',
+                validate: validateDate
+            }
+        ]);
+
+        await displayAppointments();
+
+        action = await inquirer.prompt([
             {
                 type: 'list',
                 name: 'action',
                 message: 'Choose an option:',
-                choices: ['Increase the week', 'Decrease the week', 'Exit'],
+                choices: ['Select timeframe', 'Exit'],
             },
-        ]));
-        switch (action) {
-            case 'Increase the week':
-                changeSelectedTime(7);
-                await displayAppointments();
-                break;
+        ]);
 
-            case 'Decrease the week':
-                changeSelectedTime(-7);
-                await displayAppointments();
-                break;
-
-            case 'Exit':
-                console.log('\nReturning to Main Menu\n');
-                await mainMenu();
-                break;
-        }
-    } while (action !== 'Exit');
+    } while (action?.action !== 'Exit');
 };
 
+function validateDate(input) {
+    const date = DateTime.fromFormat(input, 'yyyy-MM-dd');
+    if (!date.isValid) {
+        return 'Invalid date format. Please use YYYY-MM-DD';
+    }
+    return true;
+}
+
+// Displays appointments by retrieving them from the server, mapping them by day, and printing them as a table
 const displayAppointments = async () => {
     try {
-        await retrieveAppointments(today, sevenDaysLater);
+        await retrieveAppointments(answers.startingDate, answers.endingDate);
         mapAppointmentsByDay();
         appointmentTable();
     } catch (error) {
@@ -59,21 +65,40 @@ const displayAppointments = async () => {
     }
 }
 
+// Fetches appointments from the server
 const retrieveAppointments = async (startingDate, endingDate) => {
     try {
-        let response = await mqttRequestResponse({ data: { dentistId: hardCodedDentistId, startingDate: startingDate, endingDate: endingDate } }, MQTT_TOPICS.APPOINTMENT.RETRIEVE.MANY);
+        let response = await mqttRequestResponse({ dentistId: getActiveUserId(), startingDate: startingDate, endingDate: endingDate }, MQTT_TOPICS.APPOINTMENT.RETRIEVE.MANY);
         if (response.status.code === 200) {
             appointments = response.data;
-            appointments.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+            if (appointments.length < 1) {
+                console.log(chalk.yellow('No appointments found for this timeframe.'));
+            }
+            else {
+                appointments.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+            }
         } else {
             console.log(chalk.red('Error fetching appointments:', response.status.message));
         }
     }
     catch (error) {
-        console.error('Error fetching appointments: ', error);
+        console.error('Error while fetching appointments: ', error);
     }
 }
 
+// Maps appointments by day
+const mapAppointmentsByDay = () => {
+    appointmentsByDay = {};
+    appointments.forEach(appointment => {
+        const dateKey = new Date(appointment.startTime).toDateString();
+        if (!appointmentsByDay[dateKey]) {
+            appointmentsByDay[dateKey] = [];
+        }
+        appointmentsByDay[dateKey].push(appointment);
+    });
+}
+
+// Prints appointments as a table
 const appointmentTable = () => {
     for (const date in appointmentsByDay) {
         console.log(chalk.yellow(`\nAppointments for ${date}:`));
@@ -105,20 +130,4 @@ const appointmentTable = () => {
         });
         console.log(table.toString());
     }
-}
-
-const mapAppointmentsByDay = () => {
-    appointmentsByDay = {};
-    appointments.forEach(appointment => {
-        const dateKey = new Date(appointment.startTime).toDateString();
-        if (!appointmentsByDay[dateKey]) {
-            appointmentsByDay[dateKey] = [];
-        }
-        appointmentsByDay[dateKey].push(appointment);
-    });
-}
-
-const changeSelectedTime = (changeByDays) => {
-    today.setDate(today.getDate() + changeByDays);
-    sevenDaysLater.setDate(sevenDaysLater.getDate() + changeByDays);
 }

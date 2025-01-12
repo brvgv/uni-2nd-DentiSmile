@@ -2,6 +2,8 @@ import inquirer from "inquirer";
 import { startupScreen } from "./startup.js";
 import { viewAppointments } from "./viewAppointments.js";
 import { cancelOrRemoveAppointment } from "./cancelOrRemoveAppointment.js";
+import { signOutUser } from "../util/userState.js";
+import { createAppointments } from "./createAppointments.js";
 
 // Main menu after login
 export const mainMenu = async () => {
@@ -10,7 +12,7 @@ export const mainMenu = async () => {
       type: 'list',
       name: 'action',
       message: 'Choose an option:',
-      choices: ['View Appointments', 'Create Appointment', 'Cancel or Remove Appointment', 'Logout'],
+      choices: ['View Appointments', 'Create Appointments', 'Cancel or Remove Appointment', 'Logout'],
     },
   ]);
 
@@ -19,8 +21,8 @@ export const mainMenu = async () => {
       await viewAppointments();
       break;
 
-    case 'Create Appointment':
-      console.log('Feature coming soon: Creating an appointment...');
+    case 'Create Appointments':
+      await createAppointments();
       break;
 
     case 'Cancel or Remove Appointment':
@@ -29,6 +31,7 @@ export const mainMenu = async () => {
 
     case 'Logout':
       console.log('\nLogging out...\n');
+      signOutUser();
       await startupScreen(); // Return to login screen
       break;
   }

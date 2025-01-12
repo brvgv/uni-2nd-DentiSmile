@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon ./src/index.js",
+    "dev": "nodemon --env-file=.env ./src/index.js",
     "start": "node ./src/index.js"
   },
   "author": "",
@@ -17,8 +17,8 @@
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
     "inquirer": "^12.1.0",
-    "uuid": "^11.0.3",
-    "shared-mqtt": "file:../shared/mqtt"
-
+    "luxon": "^3.5.0",
+    "shared-mqtt": "file:../shared/mqtt",
+    "uuid": "^11.0.3"
   }
 }

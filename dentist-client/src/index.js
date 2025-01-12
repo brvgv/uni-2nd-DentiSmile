@@ -13,5 +13,4 @@ const MQTT_OPTIONS = {
 await setupMQTT(MQTT_URI, MQTT_OPTIONS)
 
 // Start the application
-console.log(getClientId())
 await startupScreen();
