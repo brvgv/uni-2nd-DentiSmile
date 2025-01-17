@@ -39,6 +39,7 @@ export function AppointmentsTable({
 
     const handleConfirm = async () => {
         try {
+            if (!cancellingId) return;
             const result = await onCancel(cancellingId)
             if (result.success) {
                 toast.success('Appointment Cancelled', {

@@ -1,52 +1,64 @@
+import EventEmitter from 'events'
 import { BaseBookingService } from '../BaseBookingService'
-import { IAppointment } from '../interfaces/IAppointment'
-import { IBooking } from '../interfaces/IBooking'
-import { BookingResponse, IBookingService } from '../interfaces/IBookingService'
+import { IBookingService } from '../interfaces/IBookingService'
 
 class MockBookingService extends BaseBookingService implements IBookingService {
     constructor() {
         super(null)
     }
 
-    async requestAppointment(
-        appointmentId: string
-    ): Promise<{ data: BookingResponse }> {
-        await new Promise((resolve) => setTimeout(resolve, 500))
-        return {
-            data: {
+    requestAppointment(
+        appointmentId: string,
+        _patientId: string
+    ): EventEmitter {
+        const emitter = new EventEmitter();
+        setTimeout(() => {
+            emitter.emit('data', {
                 appointmentId,
                 status: 'confirmed',
                 dateTime: new Date().toISOString()
-            }
-        }
+            });
+        }, 500);
+        return emitter;
     }
-    public async cancelBooking(
-        bookingId: string
-    ): Promise<{ error?: string; data?: Record<string, unknown> }> {
-        await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate network delay
-
-        if (!bookingId) {
-            return { error: 'Booking ID is required' }
-        }
-
-        return {
-            data: {
+    public cancelBooking(bookingId: string): EventEmitter {
+        const emitter = new EventEmitter();
+        setTimeout(() => {
+            if (!bookingId) {
+                emitter.emit('error', 'Booking ID is required');
+                return;
+            }
+            emitter.emit('data', {
                 bookingId,
                 status: 'cancelled',
                 cancelledAt: new Date().toISOString()
-            }
-        }
+            });
+        }, 500);
+        return emitter;
     }
 
-    public getBookings(): Promise<{ data: IBooking[] }> {
-        throw new Error('Method not implemented.')
+    public getBookings(patientId: string): EventEmitter {
+        const emitter = new EventEmitter();
+        setTimeout(() => {
+            emitter.emit('data', {
+                data: []
+            });
+        }, 500);
+        return emitter;
     }
 
-    public getBookingAppointments(): Promise<{
-        error?: string
-        data?: IAppointment[]
-    }> {
-        throw new Error('Method not implemented.')
+    public getBookingAppointments(
+        clinicId: string,
+        reasonId?: string,
+        date?: string
+    ): EventEmitter {
+        const emitter = new EventEmitter();
+        setTimeout(() => {
+            emitter.emit('data', {
+                data: []
+            });
+        }, 500);
+        return emitter;
     }
 
     public disconnect(): Promise<void> {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { IBookingService } from './interfaces/IBookingService'
 import { RequestResponseManager } from '@/lib/RequestResponseManager'
 import { EventEmitter } from 'events'
@@ -13,7 +14,7 @@ export abstract class BaseBookingService implements IBookingService {
         date?: string
     }>
 
-    constructor(client: MqttClient) {
+    constructor(client: any) {
         this.client = client
         this.requestManager = new RequestResponseManager()
 

@@ -9,10 +9,11 @@ import { useEffect, useState } from 'react'
 export default function AccountButton() {
     const [patientId, setPatientId] = useState<string>()
     const router = useRouter()
+
     useNotification(patientId ?? undefined)
 
     useEffect(() => {
-        const patientId = localStorage.getItem('patientId')
+        const patientId = localStorage.getItem('userId')
         if (patientId) setPatientId(patientId)
     }, [])
 

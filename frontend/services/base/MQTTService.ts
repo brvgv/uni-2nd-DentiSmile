@@ -6,10 +6,13 @@ const { connectMQTT, MQTT_TOPICS } = mqtt
 
 class MQTTService {
     private static instance: MqttClient
+    private static isConnecting: boolean = false
 
     public static async getClient() {
-        if (!MQTTService.instance) {
+        if (!MQTTService.instance && !MQTTService.isConnecting) {
+            MQTTService.isConnecting = true
             MQTTService.instance = await connectMQTT(MQTT_BROKER_URL)
+            MQTTService.isConnecting = false
         }
         return MQTTService.instance
     }

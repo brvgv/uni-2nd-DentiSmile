@@ -16,10 +16,11 @@ interface RequestResponse<T> {
     topic: string
 }
 
-export class RequestResponseManager<T> {
+export class  RequestResponseManager<T> {
     private requests = new Map<string, RequestResponse<T>>()
     private DEFAULT_TIMEOUT = 10000
-    private broadcastSubscriptions = new Set<string>()
+    private static broadcastSubscriptions = new Set<string>()
+    private messageHandlers = new Map<string, (topic: string, message: Buffer) => void>()
 
     public request(
         requestTopic: string,
@@ -33,7 +34,7 @@ export class RequestResponseManager<T> {
         const emitter = new EventEmitter()
         const requestPayload =
             type === RequestType.DIRECT ? { ...payload, clientId } : payload
-        
+
         const topicToSubscribe =
             type === RequestType.BROADCAST
                 ? responseTopic
@@ -56,7 +57,7 @@ export class RequestResponseManager<T> {
 
         if (
             type === RequestType.BROADCAST &&
-            this.broadcastSubscriptions.has(topicToSubscribe)
+            RequestResponseManager.broadcastSubscriptions.has(topicToSubscribe)
         ) {
             client.publish(requestTopic, JSON.stringify(requestPayload))
             return emitter
@@ -64,14 +65,15 @@ export class RequestResponseManager<T> {
 
         const messageHandler = (topic: string, message: Buffer) => {
             // Find all requests that match this topic
-            const matchingRequests = Array.from(this.requests.entries())
-                .filter(([, request]) => request.topic === topic)
+            const matchingRequests = Array.from(this.requests.entries()).filter(
+                ([, request]) => request.topic === topic
+            )
 
             if (matchingRequests.length === 0) return
 
             try {
                 const response = JSON.parse(message.toString())
-                
+
                 matchingRequests.forEach(([clientId, request]) => {
                     if (response.status?.code === 200) {
                         request.emitter.emit('data', response.data || response)
@@ -81,16 +83,21 @@ export class RequestResponseManager<T> {
                     } else {
                         request.emitter.emit(
                             'error',
-                            new Error(response.status?.message || 'Request failed')
+                            new Error(
+                                response.status?.message || 'Request failed'
+                            )
                         )
                         if (request.type === RequestType.DIRECT) {
                             this.cleanup(clientId, client)
                         }
                     }
                 })
-            } catch {
+            } catch (e){
                 matchingRequests.forEach(([clientId, request]) => {
-                    request.emitter.emit('error', new Error('Invalid response format'))
+                    request.emitter.emit(
+                        'error',
+                        new Error('Invalid response format', e)
+                    )
                     if (request.type === RequestType.DIRECT) {
                         this.cleanup(clientId, client)
                     }
@@ -99,6 +106,7 @@ export class RequestResponseManager<T> {
         }
 
         client.on('message', messageHandler)
+        this.messageHandlers.set(clientId, messageHandler)
 
         client.subscribe(topicToSubscribe, (err) => {
             if (err) {
@@ -111,7 +119,7 @@ export class RequestResponseManager<T> {
             }
 
             if (type === RequestType.BROADCAST) {
-                this.broadcastSubscriptions.add(topicToSubscribe)
+                RequestResponseManager.broadcastSubscriptions.add(topicToSubscribe)
             }
 
             client.publish(requestTopic, JSON.stringify(requestPayload))
@@ -120,22 +128,76 @@ export class RequestResponseManager<T> {
         return emitter
     }
 
+    public subscribeOnly(
+        topic: string,
+        client: MqttClient
+    ): EventEmitter {
+        const clientId = generateUniqueId()
+        const emitter = new EventEmitter()
+
+        this.requests.set(clientId, {
+            emitter,
+            type: RequestType.BROADCAST,
+            topic: topic
+        })
+
+        const messageHandler = (messageTopic: string, message: Buffer) => {
+            if (messageTopic !== topic) return;
+
+            try {
+                const response = JSON.parse(message.toString())
+                emitter.emit('data', response.data || response)
+            } catch (e) {
+                console.log('Error parsing response:', e);
+                emitter.emit('error', new Error('Invalid response format'))
+            }
+        }
+
+        client.on('message', messageHandler)
+        this.messageHandlers.set(clientId, messageHandler)
+        
+        client.subscribe(topic, (err) => {
+            if (err) {
+                emitter.emit('error', new Error(`Subscription error: ${err.message}`))
+                this.cleanup(clientId, client)
+                return
+            }
+            RequestResponseManager.broadcastSubscriptions.add(topic)
+        })
+
+        return emitter
+    }
+
     private cleanup(clientId: string, client: MqttClient) {
         const request = this.requests.get(clientId)
         if (request) {
-            if (request.type === RequestType.DIRECT) {
+            if (request.timeout) {
                 clearTimeout(request.timeout)
-                client.unsubscribe(clientId)
+            }
+            if (request.type === RequestType.DIRECT) {
+                client.unsubscribe(request.topic)
             }
             this.requests.delete(clientId)
         }
     }
 
     public unsubscribeAll(client: MqttClient) {
-        // Clean up all subscriptions when component unmounts
-        this.broadcastSubscriptions.forEach((topic) => {
+        // Clean up all direct request subscriptions
+        this.requests.forEach((request, clientId) => {
+            this.cleanup(clientId, client)
+        })
+        this.requests.clear()
+
+        // Clean up all broadcast subscriptions
+        RequestResponseManager.broadcastSubscriptions.forEach((topic) => {
             client.unsubscribe(topic)
         })
-        this.broadcastSubscriptions.clear()
+        RequestResponseManager.broadcastSubscriptions.clear()
+
+        // Remove all message handlers
+        this.messageHandlers.forEach((handler) => {
+            client.removeListener('message', handler)
+        })
+        this.messageHandlers.clear()
     }
 }

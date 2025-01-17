@@ -28,7 +28,7 @@ function RegisterForm() {
         try {
             await register(
                 formData.get('email')?.toString() || '',
-                formData.get('password').toString()
+                formData.get('password')?.toString() || ''
             )
         } catch (error) {
             console.error(error)

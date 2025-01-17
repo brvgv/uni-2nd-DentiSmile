@@ -18,7 +18,7 @@ function LoginForm() {
         try {
             await login(
                 formData.get('email')?.toString() || '',
-                formData.get('password').toString()
+                formData.get('password')?.toString() || ''
             )
         } catch (error) {
             console.error(error)

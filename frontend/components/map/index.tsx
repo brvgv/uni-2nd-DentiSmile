@@ -4,15 +4,15 @@ import { useState } from 'react'
 import MapContainer from './MapContainer'
 import MarkerWithPopup from './MarkerWithPopup'
 import { IClinic } from '../../services/interfaces/IClinic'
+import { useGeolocation } from '@/hooks/useGeolocation'
 
 interface MapProps {
     clinics: IClinic[]
-    center: [number, number]
-    zoom: number
 }
 
-const Map = ({ clinics, center, zoom }: MapProps) => {
+const Map = ({ clinics }: MapProps) => {
     const [activeMarker, setActiveMarker] = useState<string | null>(null)
+    const { position: center, zoom } = useGeolocation()
 
     return (
         <MapContainer center={center} zoom={zoom}>

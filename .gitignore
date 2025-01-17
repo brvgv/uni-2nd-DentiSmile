@@ -22,10 +22,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Docker files
-docker-compose.override.yml
-docker-compose.yml
-Dockerfile
 
 # Other
 *.swp

@@ -1,6 +1,5 @@
 import { MQTT_TOPICS } from './base/MQTTService'
 import { BaseNotificationService } from './base/BaseNotificationService'
-import { RequestType } from '@/lib/RequestResponseManager'
 import { MqttClient } from 'mqtt'
 import { EventEmitter } from 'events'
 
@@ -27,21 +26,15 @@ export class NotificationService extends BaseNotificationService {
         const emitter = new EventEmitter()
 
         // Subscribe to availability notifications
-        const availabilityEmitter = this.requestManager.request(
+        const availabilityEmitter = this.requestManager.subscribeOnly(
             APPOINTMENT.CREATED(this.patientId),
-            APPOINTMENT.CREATED(this.patientId),
-            {},
-            this.client,
-            RequestType.BROADCAST
+            this.client
         )
 
         // Subscribe to cancellation notifications
-        const cancellationEmitter = this.requestManager.request(
+        const cancellationEmitter = this.requestManager.subscribeOnly(
             APPOINTMENT.CANCELED(this.patientId),
-            APPOINTMENT.CANCELED(this.patientId),
-            {},
-            this.client,
-            RequestType.BROADCAST
+            this.client
         )
 
         availabilityEmitter.on('data', (message) => {

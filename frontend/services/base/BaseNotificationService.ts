@@ -21,10 +21,13 @@ export abstract class BaseNotificationService implements INotificationService {
 
     public async disconnect(): Promise<void> {
         try {
-            this.requestManager.unsubscribeAll(this.client)
             if (this.client.connected) {
-                await new Promise<void>((resolve) => {
-                    this.client.end(false, {}, () => resolve())
+                this.requestManager.unsubscribeAll(this.client)
+                await new Promise<void>((resolve, reject) => {
+                    this.client.end(false, {}, (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    })
                 })
             }
         } catch (error) {
