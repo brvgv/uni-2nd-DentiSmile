@@ -8,7 +8,7 @@ The DentiSmile+ system leverages a distributed microservices architecture combin
 
 ## System Architecture
 
-![System Architecture Diagram](docs\architecture\diagrams\sysarch.png)
+![System Architecture Diagram](docs/architecture/diagrams/sysarch.png)
 
 ## ER Diagram
 
